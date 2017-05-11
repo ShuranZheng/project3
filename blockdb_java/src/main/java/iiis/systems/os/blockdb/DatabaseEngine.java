@@ -19,10 +19,11 @@ public class DatabaseEngine {
         instance = new DatabaseEngine(dataDir);
     }
 
+    public static final boolean FAIR = true;
     private HashMap<String, Integer> balances = new HashMap<>();
     private HashMap<String, ReadWriteLock> locks = new HashMap<>();
     private int logLength = 0;
-    private Lock lockLock = new ReentrantLock();
+    private Lock lockLock = new ReentrantLock(FAIR);
     private String dataDir;
 
     DatabaseEngine(String dataDir) {
@@ -32,7 +33,7 @@ public class DatabaseEngine {
     private ReadWriteLock getLock(String userId){
     	lockLock.lock();
     	try{
-    		if (!locks.containsKey(userId)) locks.put(userId, new ReentrantReadWriteLock());
+    		if (!locks.containsKey(userId)) locks.put(userId, new ReentrantReadWriteLock(FAIR));
     		return locks.get(userId);
     	}finally{
     		lockLock.unlock();

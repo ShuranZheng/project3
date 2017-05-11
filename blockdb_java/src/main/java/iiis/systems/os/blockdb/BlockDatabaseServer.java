@@ -92,8 +92,8 @@ public class BlockDatabaseServer {
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    	//testDatabaseOperation();
-    	JSONObject config = Util.readJsonFile("config.json");
+    	testDatabaseOperation();
+    	/*JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
         String address = config.getString("ip");
         int port = Integer.parseInt(config.getString("port"));
@@ -103,7 +103,7 @@ public class BlockDatabaseServer {
 
         final BlockDatabaseServer server = new BlockDatabaseServer();
         server.start(address, port);
-        server.blockUntilShutdown();
+        server.blockUntilShutdown();*/
     }
 
     static class BlockDatabaseImpl extends BlockDatabaseGrpc.BlockDatabaseImplBase {
