@@ -22,6 +22,7 @@ public class DatabaseEngine {
     private HashMap<String, Integer> balances = new HashMap<>();
     private HashMap<String, ReadWriteLock> locks = new HashMap<>();
     private int logLength = 0;
+    private Lock lockLock = new ReentrantLock();
     private String dataDir;
 
     DatabaseEngine(String dataDir) {
@@ -29,9 +30,13 @@ public class DatabaseEngine {
     }
     
     private ReadWriteLock getLock(String userId){
-    	if (locks.containsKey(userId)) return locks.get(userId);
-    	locks.put(userId, new ReentrantReadWriteLock());
-    	return locks.get(userId);
+    	lockLock.lock();
+    	try{
+    		if (!locks.containsKey(userId)) locks.put(userId, new ReentrantReadWriteLock());
+    		return locks.get(userId);
+    	}finally{
+    		lockLock.unlock();
+    	}
     }
 
     private int getOrZero(String userId) {
@@ -54,11 +59,14 @@ public class DatabaseEngine {
     }
     
     private void writeLog(String type, String fromId, String toId, int value){
+    	 logLength++;
     	try{
 	    	FileWriter output = new FileWriter("log.txt", true);
 	    	if (type == "TRANSFER")
-	    		output.write("{\"Type\":\""+type+"\",\"Value\":"+value+",\"FromID\":\""+fromId+"\",\"ToID\":\""+toId+"\"}\n");
-	    	else output.write("{\"Type\":\""+type+"\",\"UserID\":\""+fromId+"\",\"Value\":"+value+"}");
+	    		output.write("{\"Type\":\""+type+"\",\"Value\":"+value+",\"FromID\":\""+fromId+"\",\"ToID\":\""+toId+"\"}"+System.lineSeparator());
+	    	else output.write("{\"Type\":\""+type+"\",\"UserID\":\""+fromId+"\",\"Value\":"+value+"}"+System.lineSeparator());
+	    	output.flush();
+	    	output.close();
 	    }catch (IOException e){
 	    	e.printStackTrace();
     	}
@@ -69,17 +77,19 @@ public class DatabaseEngine {
         lock.writeLock().lock();
         try{
         	balances.put(userId, value);
+        	
+        	//*********************************************
+            //Write the log
+            writeLog("PUT", userId, "", value);
+            
+          //**********************************************
+            return true;
+            
         }
         finally{
         	lock.writeLock().unlock();
         }
-      //*********************************************
-        logLength++;
-        //Write the log
-        writeLog("PUT", userId, "", value);
-        
-      //**********************************************
-        return true;
+      
     }
 
     public boolean deposit(String userId, int value) {
@@ -88,17 +98,18 @@ public class DatabaseEngine {
         try{
         	int balance = getOrZero(userId);
             balances.put(userId, balance + value);
+            
+          //*************************************************
+        	//Write the log
+            writeLog("DEPOSIT", userId, "", value);
+         //   System.out.println(balances.get(userId));
+        //*************************************************
+            return true;
         }
         finally{
         	lock.writeLock().unlock();
         }
         
-    //*************************************************
-        logLength++;
-    	//Write the log
-        writeLog("DEPOSIT", userId, "", value);
-    //*************************************************
-        return true;
     }
 
     public boolean withdraw(String userId, int value) {
@@ -108,16 +119,19 @@ public class DatabaseEngine {
         	int balance = getOrZero(userId);
         	if (balance - value < 0) return false;
         	balances.put(userId, balance - value);
+        	
+        	
+        //***********************************************
+            //Write the log
+            writeLog("WITHDRAW", userId, "", value);
+        //    System.out.println(balances.get(userId));
+        //*************************************************
+        	return true;
+      
         }
         finally{
         	lock.writeLock().unlock();
         }
-      //***********************************************
-    	logLength++;
-        //Write the log
-        writeLog("WITHDRAW", userId, "", value);
-    //*************************************************
-    	return true;
     }
 
     public boolean transfer(String fromId, String toId, int value) {
@@ -137,17 +151,20 @@ public class DatabaseEngine {
         try{
         	int toBalance = getOrZero(toId);
         	balances.put(toId, toBalance + value);
+        	
+        	 //***********************************
+            //Write the log
+            writeLog("TRANSFER", fromId, toId, value);
+            //*************************************
+            //System.out.println(balances.get(fromId));
+            return true;
+            
         }
         finally{
         	toLock.writeLock().unlock();
         }
 
-        //***********************************
-        logLength++;
-        //Write the log
-        writeLog("TRANSFER", fromId, toId, value);
-        //*************************************
-        return true;
+       
     }
 
     public int getLogLength() {

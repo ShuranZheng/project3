@@ -8,9 +8,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class BlockDatabaseServer {
     private Server server;
@@ -42,53 +39,60 @@ public class BlockDatabaseServer {
         }
     }
     
+    static public void testDatabaseOperation(){
+    	DatabaseEngine.setup("aaa");
+    	final DatabaseEngine dbEngine = DatabaseEngine.getInstance();
 
-	//static private HashMap<String, ReentrantLock> locks = new HashMap<>();
-
+		Thread t1 = new Thread(new Runnable(){
+		    public void run(){
+		    	for (int i = 1; i < 10; i++){
+		    		System.out.println(Integer.toString(i) + " deposit " + Boolean.toString(dbEngine.deposit(Integer.toString(i), 100)));
+		    		dbEngine.get(Integer.toString(i));
+		    		try {
+		    		Thread.sleep(1000);
+		    		} catch(InterruptedException e){
+		    			e.printStackTrace();
+		    		}
+		    	}
+		    }
+		});
+		t1.start();
+		
+		Thread t2 = new Thread(new Runnable(){
+		    public void run(){
+		    	for (int i = 1; i < 10; i++){
+		    		System.out.println(Integer.toString(i) + " withdraw " + Boolean.toString(dbEngine.withdraw(Integer.toString(i), 50)));
+		    		dbEngine.get(Integer.toString(i));
+		    		try {
+		    		Thread.sleep(1000);
+		    		} catch(InterruptedException e){
+		    			e.printStackTrace();
+		    		}
+		    	}
+		    }
+		});
+		t2.start();
+		
+		
+		Thread t3 = new Thread(new Runnable(){
+		    public void run(){
+		    	for (int i = 1; i < 10; i++){
+		    		System.out.println(Integer.toString(i) + " transfer " + Boolean.toString(dbEngine.transfer(Integer.toString(i),Integer.toString(i+1), 50)));
+		    		dbEngine.get(Integer.toString(i));
+		    		try {
+		    		Thread.sleep(1000);
+		    		} catch(InterruptedException e){
+		    			e.printStackTrace();
+		    		}
+		    	}
+		    }
+		});
+		t3.start();
+    }
+    
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
-        
-    	/*locks.put("1", new ReentrantLock());
-    	locks.put("2", new ReentrantLock());
-    	for (int i = 0; i < 20; i++)
-    		if ((i%2)==0) {
-    			Thread t = new Thread(new Runnable(){
-    			    public void run(){
-			    		Lock a = locks.get("1");
-    			    	try{
-    			    		a.lock();
-    			    		Thread.sleep(5000);
-    			    		System.out.println("A Thread1 ends");
-    			    	}
-    			    	catch (InterruptedException e) {  
-    		                e.printStackTrace();  
-    		            }  
-    			    	finally{
-    			    		a.unlock();
-    			    	}
-    			    }
-    			});
-    			t.start();
-    		}else{
-    			Thread t = new Thread(new Runnable(){
-    			    public void run(){
-			    		Lock b = locks.get("2");
-    			    	try{
-    			    		b.lock();
-    			    		Thread.sleep(5000);
-    			    		System.out.println("A Thread2 ends");
-    			    	}
-    			    	catch (InterruptedException e) {  
-    		                e.printStackTrace();  
-    		            }  
-    			    	finally{
-    			    		b.unlock();
-    			    	}
-    			    }
-    			});
-    			t.start();
-    		}*/
     	
-    	
+    	//testDatabaseOperation();
     	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
         String address = config.getString("ip");
