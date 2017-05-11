@@ -8,6 +8,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class BlockDatabaseServer {
     private Server server;
@@ -38,9 +41,55 @@ public class BlockDatabaseServer {
             server.awaitTermination();
         }
     }
+    
+
+	//static private HashMap<String, ReentrantLock> locks = new HashMap<>();
 
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
-        JSONObject config = Util.readJsonFile("config.json");
+        
+    	/*locks.put("1", new ReentrantLock());
+    	locks.put("2", new ReentrantLock());
+    	for (int i = 0; i < 20; i++)
+    		if ((i%2)==0) {
+    			Thread t = new Thread(new Runnable(){
+    			    public void run(){
+			    		Lock a = locks.get("1");
+    			    	try{
+    			    		a.lock();
+    			    		Thread.sleep(5000);
+    			    		System.out.println("A Thread1 ends");
+    			    	}
+    			    	catch (InterruptedException e) {  
+    		                e.printStackTrace();  
+    		            }  
+    			    	finally{
+    			    		a.unlock();
+    			    	}
+    			    }
+    			});
+    			t.start();
+    		}else{
+    			Thread t = new Thread(new Runnable(){
+    			    public void run(){
+			    		Lock b = locks.get("2");
+    			    	try{
+    			    		b.lock();
+    			    		Thread.sleep(5000);
+    			    		System.out.println("A Thread2 ends");
+    			    	}
+    			    	catch (InterruptedException e) {  
+    		                e.printStackTrace();  
+    		            }  
+    			    	finally{
+    			    		b.unlock();
+    			    	}
+    			    }
+    			});
+    			t.start();
+    		}*/
+    	
+    	
+    	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
         String address = config.getString("ip");
         int port = Integer.parseInt(config.getString("port"));
