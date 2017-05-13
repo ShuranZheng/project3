@@ -74,6 +74,7 @@ public class DatabaseEngine {
     }
 
     public boolean put(String userId, int value) {
+    	if (value < 0) return false;
         ReadWriteLock lock = getLock(userId);
         lock.writeLock().lock();
         try{
@@ -94,6 +95,7 @@ public class DatabaseEngine {
     }
 
     public boolean deposit(String userId, int value) {
+    	if (value < 0) return false;
         ReadWriteLock lock = getLock(userId);
         lock.writeLock().lock();
         try{
@@ -114,6 +116,7 @@ public class DatabaseEngine {
     }
 
     public boolean withdraw(String userId, int value) {
+    	if (value < 0) return false;
         ReadWriteLock lock = getLock(userId);
         lock.writeLock().lock();
         try{
@@ -136,7 +139,7 @@ public class DatabaseEngine {
     }
 
     public boolean transfer(String fromId, String toId, int value) {
-        
+        if ((value < 0) || (fromId.equals(toId))) return false;
         ReadWriteLock fromLock = getLock(fromId);
         fromLock.writeLock().lock();
         try{
