@@ -45,7 +45,7 @@ public class BlockDatabaseServer {
 
 		Thread t1 = new Thread(new Runnable(){
 		    public void run(){
-		    	for (int i = 1; i < 10; i++){
+		    	for (int i = 0; i < 50; i++){
 		    		System.out.println(Integer.toString(i) + " deposit " + Boolean.toString(dbEngine.deposit(Integer.toString(i), 100)));
 		    		dbEngine.get(Integer.toString(i));
 		    		try {
@@ -60,7 +60,7 @@ public class BlockDatabaseServer {
 		
 		Thread t2 = new Thread(new Runnable(){
 		    public void run(){
-		    	for (int i = 1; i < 10; i++){
+		    	for (int i = 0; i < 50; i++){
 		    		
 		    		System.out.println(Integer.toString(i) + " withdraw " + Boolean.toString(dbEngine.withdraw(Integer.toString(i), 50)));
 		    		dbEngine.get(Integer.toString(i));
@@ -82,7 +82,7 @@ public class BlockDatabaseServer {
 		    		}catch (Exception e){
 		    			e.printStackTrace();
 		    		}
-		    	for (int i = 1; i < 10; i++){
+		    	for (int i = 0; i < 50; i++){
 		    		System.out.println(Integer.toString(i) + " transfer " + Boolean.toString(dbEngine.transfer(Integer.toString(i),Integer.toString(i+1), 50)));
 		    		dbEngine.get(Integer.toString(i));
 		    		/*try {
@@ -98,8 +98,9 @@ public class BlockDatabaseServer {
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    //testDatabaseOperation();
-    	JSONObject config = Util.readJsonFile("config.json");
+    	testDatabaseOperation();
+    	
+    	/*JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
         String address = config.getString("ip");
         int port = Integer.parseInt(config.getString("port"));
@@ -109,7 +110,7 @@ public class BlockDatabaseServer {
 
         final BlockDatabaseServer server = new BlockDatabaseServer();
         server.start(address, port);
-        server.blockUntilShutdown();
+        server.blockUntilShutdown();*/
     }
 
     static class BlockDatabaseImpl extends BlockDatabaseGrpc.BlockDatabaseImplBase {

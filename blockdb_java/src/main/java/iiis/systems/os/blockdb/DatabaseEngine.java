@@ -1,5 +1,9 @@
 package iiis.systems.os.blockdb;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -22,7 +26,8 @@ public class DatabaseEngine {
     public static final boolean FAIR = true;
     private HashMap<String, Integer> balances = new HashMap<>();
     private HashMap<String, ReadWriteLock> locks = new HashMap<>();
-    private int logLength = 0;
+    private int logLength = 0, blockNum = 0;
+    private final int N = 50;
     private Lock lockLock = new ReentrantLock(FAIR);
     private String dataDir;
 
@@ -60,14 +65,39 @@ public class DatabaseEngine {
     }
     
     private void writeLog(String type, String fromId, String toId, int value){
-    	 logLength++;
+    
     	try{
-	    	FileWriter output = new FileWriter("log.txt", true);
+    		File dataFolder = new File(dataDir);
+    		if (!dataFolder.exists()) dataFolder.mkdir();
+    		
+    		if (logLength == 50) {
+    			blockNum ++;
+    			BufferedReader logReader = new BufferedReader(new FileReader(dataDir + "/log.txt"));
+    			BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir + "/" + Integer.toString(blockNum) + ".json"));
+    			blockWriter.write("{\n\"BlockID\":" + blockNum + ",\"PrevHash\":\"00000000\",\n\"Transactions\":[\n");
+    			String line = logReader.readLine();
+				blockWriter.write(line);
+    			for (int i = 1; i < N; i++){
+    				String logLine = logReader.readLine();
+    				blockWriter.write(",\n" + logLine);
+    			}
+    			blockWriter.write("\n],\n\"Nonce\":\"00000000\"}");
+    			logReader.close();
+    			blockWriter.close();
+    			logLength = 0;
+    			File log = new File(dataDir + "/log.txt");
+        		log.delete();
+    		}
+    		
+    		
+    		logLength++;
+    		//System.out.println(logLength);
+	    	BufferedWriter logWriter = new BufferedWriter(new FileWriter(dataDir + "/log.txt", true));
 	    	if (type == "TRANSFER")
-	    		output.write("{\"Type\":\""+type+"\",\"Value\":"+value+",\"FromID\":\""+fromId+"\",\"ToID\":\""+toId+"\"}"+System.lineSeparator());
-	    	else output.write("{\"Type\":\""+type+"\",\"UserID\":\""+fromId+"\",\"Value\":"+value+"}"+System.lineSeparator());
-	    	output.flush();
-	    	output.close();
+	    		logWriter.write("{\"Type\":\""+type+"\",\"Value\":"+value+",\"FromID\":\""+fromId+"\",\"ToID\":\""+toId+"\"}"+System.lineSeparator());
+	    	else logWriter.write("{\"Type\":\""+type+"\",\"UserID\":\""+fromId+"\",\"Value\":"+value+"}"+System.lineSeparator());
+	    	logWriter.flush();
+	    	logWriter.close();
 	    }catch (IOException e){
 	    	e.printStackTrace();
     	}
