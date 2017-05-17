@@ -245,7 +245,10 @@ public class DatabaseEngine {
        // ReadWriteLock lock = getLock(userId);
         RWLock.writeLock().lock();
         int balance = getOrZero(userId);
-    	if (balance - value < 0) return false;
+    	if (balance - value < 0) {
+    		RWLock.writeLock().unlock();
+    		return false;
+    	}
         try{
         	balances.put(userId, balance - value);
         	

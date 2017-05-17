@@ -121,7 +121,7 @@ public class BlockDatabaseServer {
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    	testDatabaseOperation(0, 0, 1);
+    	//testDatabaseOperation(1, 1, 1);
     	
     	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
