@@ -3,9 +3,12 @@ package iiis.systems.os.blockdb;
 import io.grpc.Server;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -39,50 +42,52 @@ public class BlockDatabaseServer {
         }
     }
     
-    static public void testDatabaseOperation(){
-    	DatabaseEngine.setup("aaa");
+    static public void testDatabaseOperation( int D, int W, int T) throws IOException{
+    	String dataDir = "aaa";
+    	DatabaseEngine.setup(dataDir);
     	final DatabaseEngine dbEngine = DatabaseEngine.getInstance();
-
+    	dbEngine.recover();
+    	
 		Thread t1 = new Thread(new Runnable(){
 		    public void run(){
-		    	for (int i = 0; i < 50; i++){
+		    	for (int i = 0; i < 70; i++){
 		    		System.out.println(Integer.toString(i) + " deposit " + Boolean.toString(dbEngine.deposit(Integer.toString(i), 100)));
 		    		dbEngine.get(Integer.toString(i));
-		    		try {
+		    		/*try {
 		    		Thread.sleep(1000);
 		    		} catch(InterruptedException e){
 		    			e.printStackTrace();
-		    		}
+		    		}*/
 		    	}
 		    }
 		});
-		t1.start();
+		if (D == 1) t1.start();
 		
 		Thread t2 = new Thread(new Runnable(){
 		    public void run(){
-		    	for (int i = 0; i < 50; i++){
+		    	for (int i = 0; i < 70; i++){
 		    		
 		    		System.out.println(Integer.toString(i) + " withdraw " + Boolean.toString(dbEngine.withdraw(Integer.toString(i), 50)));
 		    		dbEngine.get(Integer.toString(i));
-		    		try {
+		    		/*try {
 		    		Thread.sleep(1000);
 		    		} catch(InterruptedException e){
 		    			e.printStackTrace();
-		    		}
+		    		}*/
 		    	}
 		    }
 		});
-		t2.start();
+		if (W == 1) t2.start();
 		
 		
 		Thread t3 = new Thread(new Runnable(){
 		    public void run(){
-		    	try{
+		    	/*try{
 		    		Thread.sleep(100);
 		    		}catch (Exception e){
 		    			e.printStackTrace();
-		    		}
-		    	for (int i = 0; i < 50; i++){
+		    		}*/
+		    	for (int i = 0; i < 70; i++){
 		    		System.out.println(Integer.toString(i) + " transfer " + Boolean.toString(dbEngine.transfer(Integer.toString(i),Integer.toString(i+1), 50)));
 		    		dbEngine.get(Integer.toString(i));
 		    		/*try {
@@ -93,24 +98,26 @@ public class BlockDatabaseServer {
 		    	}
 		    }
 		});
-		t3.start();
+		if (T == 1) t3.start();
     }
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    	testDatabaseOperation();
+    	//testDatabaseOperation(0, 1, 0);
     	
-    	/*JSONObject config = Util.readJsonFile("config.json");
+    	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
         String address = config.getString("ip");
         int port = Integer.parseInt(config.getString("port"));
         String dataDir = config.getString("dataDir");
 
         DatabaseEngine.setup(dataDir);
+        DatabaseEngine dbEngine = DatabaseEngine.getInstance();
+        dbEngine.recover();
 
         final BlockDatabaseServer server = new BlockDatabaseServer();
         server.start(address, port);
-        server.blockUntilShutdown();*/
+        server.blockUntilShutdown();
     }
 
     static class BlockDatabaseImpl extends BlockDatabaseGrpc.BlockDatabaseImplBase {
