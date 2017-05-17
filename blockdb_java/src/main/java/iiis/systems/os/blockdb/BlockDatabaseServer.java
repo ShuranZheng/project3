@@ -46,8 +46,10 @@ public class BlockDatabaseServer {
     	String dataDir = "aaa";
     	DatabaseEngine.setup(dataDir);
     	final DatabaseEngine dbEngine = DatabaseEngine.getInstance();
-    	dbEngine.recover();
-    	
+    	if (!dbEngine.recover()) {
+        	System.out.println("Fail to start the database.");
+        	return;
+    	}
 		Thread t1 = new Thread(new Runnable(){
 		    public void run(){
 		    	for (int i = 0; i < 70; i++){
@@ -119,7 +121,7 @@ public class BlockDatabaseServer {
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    	//testDatabaseOperation(0, 0, 1);
+    	//testDatabaseOperation(1, 1, 0);
     	
     	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
@@ -129,11 +131,13 @@ public class BlockDatabaseServer {
 
         DatabaseEngine.setup(dataDir);
         DatabaseEngine dbEngine = DatabaseEngine.getInstance();
-        dbEngine.recover();
-
-        final BlockDatabaseServer server = new BlockDatabaseServer();
-        server.start(address, port);
-        server.blockUntilShutdown();
+        if (!dbEngine.recover()) {
+        	System.out.println("Fail to start the database.");
+        }else{
+        	final BlockDatabaseServer server = new BlockDatabaseServer();
+        	server.start(address, port);
+        	server.blockUntilShutdown();
+        }
     }
 
     static class BlockDatabaseImpl extends BlockDatabaseGrpc.BlockDatabaseImplBase {

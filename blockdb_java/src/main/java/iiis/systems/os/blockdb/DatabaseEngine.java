@@ -22,14 +22,16 @@ public class DatabaseEngine {
         instance = new DatabaseEngine(dataDir);
     }
     
-    public void recoverTrans(JSONObject transaction){
+    public boolean recoverTrans(JSONObject transaction){
     	String type = transaction.getString("Type");
+    	if (transaction.getInt("Value")<0) return false;
     	if (type.equals("TRANSFER")){
     		String fromId = transaction.getString("FromID");
     		String toId = transaction.getString("ToID");
     		int value = transaction.getInt("Value");
     		int fromBalance = getOrZero(fromId);
             int toBalance = getOrZero(toId);
+            if (fromBalance - value < 0) return false;
             balances.put(fromId, fromBalance - value);
             balances.put(toId, toBalance + value);
     	}
@@ -48,36 +50,53 @@ public class DatabaseEngine {
     		String userId = transaction.getString("UserID");
     		int value = transaction.getInt("Value");
     		int balance = getOrZero(userId);
+    		if (balance - value < 0) return false;
             balances.put(userId, balance - value);
     	}
-
+    	return true;
     }
     
-    public void recover() throws IOException{
+    public boolean recover() throws IOException{
     	logLength = 0;
     	blockNum = 0;
     	//System.out.println("recover");
     	File logFile = new File(dataDir + "/log.json");
     	File firstBlock = new File(dataDir + "/1.json");
+    	if (firstBlock.exists() && (!logFile.exists())) {
+    		System.out.println("Missing log file!");
+    		return false;
+    	}
     	JSONObject log = null;
-    	if (logFile.exists() || firstBlock.exists()) {
+    	if (logFile.exists()) {
 			log = Util.readJsonFile(dataDir + "/log.json");
 			blockNum = log.getInt("BlockNumber");
     	}
     	//while ((new File(dataDir + "/" + Integer.toString(blockNum+1) + ".json")).exists()) blockNum ++;
     	for (int i = 1; i <= blockNum; i++){
+    		File blockI = new File(dataDir + "/" + Integer.toString(i) + ".json");
+    		if (!blockI.exists()) {
+    			System.out.println("Missing "+i+".json!");
+    			return false;
+    		}
     		JSONObject block = Util.readJsonFile(dataDir + "/" + Integer.toString(i) + ".json");
             JSONArray trans = block.getJSONArray("Transactions");
             for (int j = 0; j < trans.length(); j++)
-            	recoverTrans(trans.getJSONObject(j));
+            	if (!recoverTrans(trans.getJSONObject(j))){
+            		System.out.println("Inconsistent block files or log files!");
+            		return false;
+            	}
     	}
     	
 		if (logFile.exists()) {
 			JSONArray trans = log.getJSONArray("Transactions");
 			logLength = trans.length();
 			for (int j = 0; j < trans.length(); j++)
-            	recoverTrans(trans.getJSONObject(j));
+				if (!recoverTrans(trans.getJSONObject(j))){
+            		System.out.println("Inconsistent block files or log files!");
+            		return false;
+            	}
 		}
+		return true;
     	
     }
 
