@@ -205,16 +205,15 @@ public class DatabaseEngine {
         RWLock.writeLock().lock();
         try{
         	balances.put(userId, value);
-        	
-        	//*********************************************
-            //Write the log
-            writeLog("PUT", userId, "", value);
-            
-          //**********************************************
             return true;
             
         }
         finally{
+        	//*********************************************
+            //Write the log
+        	writeLog("PUT", userId, "", value);
+        	//**********************************************
+            
         	RWLock.writeLock().unlock();
         }
       
@@ -227,15 +226,15 @@ public class DatabaseEngine {
         try{
         	int balance = getOrZero(userId);
             balances.put(userId, balance + value);
-            
-          //*************************************************
+            return true;
+        }
+        finally{
+        	   //*************************************************
         	//Write the log
             writeLog("DEPOSIT", userId, "", value);
          //   System.out.println(balances.get(userId));
         //*************************************************
-            return true;
-        }
-        finally{
+       
         	RWLock.writeLock().unlock();
         }
         
@@ -250,16 +249,15 @@ public class DatabaseEngine {
         	if (balance - value < 0) return false;
         	balances.put(userId, balance - value);
         	
-        	
-        //***********************************************
-            //Write the log
-            writeLog("WITHDRAW", userId, "", value);
-        //    System.out.println(balances.get(userId));
-        //*************************************************
-        	return true;
+          	return true;
       
         }
         finally{
+        	//***********************************************
+            //Write the log
+            writeLog("WITHDRAW", userId, "", value);
+        //    System.out.println(balances.get(userId));
+        //************************************************
         	RWLock.writeLock().unlock();
         }
     }
@@ -282,15 +280,15 @@ public class DatabaseEngine {
         	int toBalance = getOrZero(toId);
         	balances.put(toId, toBalance + value);
         	
-        	 //***********************************
-            //Write the log
-            writeLog("TRANSFER", fromId, toId, value);
-            //*************************************
-            //System.out.println(balances.get(fromId));
+        	//System.out.println(balances.get(fromId));
             return true;
             
         }
         finally{
+        	 //***********************************
+            //Write the log
+            writeLog("TRANSFER", fromId, toId, value);
+            //*************************************
         	RWLock.writeLock().unlock();
         }
        
