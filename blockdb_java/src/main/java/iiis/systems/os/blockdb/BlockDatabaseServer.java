@@ -99,11 +99,27 @@ public class BlockDatabaseServer {
 		    }
 		});
 		if (T == 1) t3.start();
+		
+		/*for (int i=0; i< 1000; i++){
+			Thread t = new Thread(new Runnable(){
+			    public void run(){
+			    		System.out.println(Integer.toString(0) + " deposit " + Boolean.toString(dbEngine.deposit(Integer.toString(0), 10)));
+			    		dbEngine.get(Integer.toString(0));
+			    		try {
+			    		Thread.sleep(1000);
+			    		} catch(InterruptedException e){
+			    			e.printStackTrace();
+			    		}
+			    	}
+				});
+				t.start();
+		}*/
+		System.out.println(dbEngine.get("0"));
     }
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    	//testDatabaseOperation(0, 1, 0);
+    	//testDatabaseOperation(0, 0, 1);
     	
     	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");

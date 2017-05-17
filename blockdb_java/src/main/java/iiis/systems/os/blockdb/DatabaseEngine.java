@@ -1,15 +1,11 @@
 package iiis.systems.os.blockdb;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.json.JSONArray;
@@ -61,7 +57,14 @@ public class DatabaseEngine {
     	logLength = 0;
     	blockNum = 0;
     	//System.out.println("recover");
-    	while ((new File(dataDir + "/" + Integer.toString(blockNum+1) + ".json")).exists()) blockNum ++;
+    	File logFile = new File(dataDir + "/log.json");
+    	File firstBlock = new File(dataDir + "/1.json");
+    	JSONObject log = null;
+    	if (logFile.exists() || firstBlock.exists()) {
+			log = Util.readJsonFile(dataDir + "/log.json");
+			blockNum = log.getInt("BlockNumber");
+    	}
+    	//while ((new File(dataDir + "/" + Integer.toString(blockNum+1) + ".json")).exists()) blockNum ++;
     	for (int i = 1; i <= blockNum; i++){
     		JSONObject block = Util.readJsonFile(dataDir + "/" + Integer.toString(i) + ".json");
             JSONArray trans = block.getJSONArray("Transactions");
@@ -69,9 +72,7 @@ public class DatabaseEngine {
             	recoverTrans(trans.getJSONObject(j));
     	}
     	
-    	File logFile = new File(dataDir + "/log.json");
 		if (logFile.exists()) {
-			JSONObject log = Util.readJsonFile(dataDir + "/log.json");
 			JSONArray trans = log.getJSONArray("Transactions");
 			logLength = trans.length();
 			for (int j = 0; j < trans.length(); j++)
@@ -128,7 +129,7 @@ public class DatabaseEngine {
     		if (!dataFolder.exists()) dataFolder.mkdir();
     		File logFile = new File(dataDir + "/log.json");
     		
-    		if (logLength ==  50) {
+    		if (logLength ==  N) {
     			blockNum ++;
     			JSONObject log = Util.readJsonFile(dataDir + "/log.json");
     			BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir + "/" + Integer.toString(blockNum) + ".json"));
@@ -169,6 +170,7 @@ public class DatabaseEngine {
             	transaction.put("Value", value);
             }
             trans.put(transaction);
+            log.put("BlockNumber", blockNum);
 	    	BufferedWriter logWriter = new BufferedWriter(new FileWriter(dataDir + "/log.json"));
 	    	log.write(logWriter);
 	 //   	logWriter.flush();
@@ -272,7 +274,6 @@ public class DatabaseEngine {
         finally{
         	RWLock.writeLock().unlock();
         }
-
        
     }
 
