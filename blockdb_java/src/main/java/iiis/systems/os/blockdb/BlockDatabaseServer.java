@@ -43,7 +43,7 @@ public class BlockDatabaseServer {
     }
     
     static public void testDatabaseOperation( int D, int W, int T) throws IOException{
-    	String dataDir = "aaa";
+    	String dataDir = "aaa/";
     	DatabaseEngine.setup(dataDir);
     	final DatabaseEngine dbEngine = DatabaseEngine.getInstance();
     	if (!dbEngine.recover()) {
@@ -121,7 +121,7 @@ public class BlockDatabaseServer {
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    	//testDatabaseOperation(0, 1, 0);
+    	testDatabaseOperation(0, 0, 1);
     	
     	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");

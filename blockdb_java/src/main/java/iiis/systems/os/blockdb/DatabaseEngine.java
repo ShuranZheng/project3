@@ -60,25 +60,25 @@ public class DatabaseEngine {
     	logLength = 0;
     	blockNum = 0;
     	//System.out.println("recover");
-    	File logFile = new File(dataDir + "/log.json");
-    	File firstBlock = new File(dataDir + "/1.json");
+    	File logFile = new File(dataDir + "log.json");
+    	File firstBlock = new File(dataDir + "1.json");
     	if (firstBlock.exists() && (!logFile.exists())) {
     		System.out.println("Missing log file!");
     		return false;
     	}
     	JSONObject log = null;
     	if (logFile.exists()) {
-			log = Util.readJsonFile(dataDir + "/log.json");
+			log = Util.readJsonFile(dataDir + "log.json");
 			blockNum = log.getInt("BlockNumber");
     	}
     	//while ((new File(dataDir + "/" + Integer.toString(blockNum+1) + ".json")).exists()) blockNum ++;
     	for (int i = 1; i <= blockNum; i++){
-    		File blockI = new File(dataDir + "/" + Integer.toString(i) + ".json");
+    		File blockI = new File(dataDir + Integer.toString(i) + ".json");
     		if (!blockI.exists()) {
     			System.out.println("Missing "+i+".json!");
     			return false;
     		}
-    		JSONObject block = Util.readJsonFile(dataDir + "/" + Integer.toString(i) + ".json");
+    		JSONObject block = Util.readJsonFile(dataDir + Integer.toString(i) + ".json");
             JSONArray trans = block.getJSONArray("Transactions");
             for (int j = 0; j < trans.length(); j++)
             	if (!recoverTrans(trans.getJSONObject(j))){
@@ -146,12 +146,12 @@ public class DatabaseEngine {
     	try{
     		File dataFolder = new File(dataDir);
     		if (!dataFolder.exists()) dataFolder.mkdir();
-    		File logFile = new File(dataDir + "/log.json");
+    		File logFile = new File(dataDir + "log.json");
     		
     		if (logLength ==  N) {
     			blockNum ++;
-    			JSONObject log = Util.readJsonFile(dataDir + "/log.json");
-    			BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir + "/" + Integer.toString(blockNum) + ".json"));
+    			JSONObject log = Util.readJsonFile(dataDir + "log.json");
+    			BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir  + Integer.toString(blockNum) + ".json"));
     			log.put("BlockID", blockNum);
     			log.put("Nonce", "00000000");
     			log.put("PrevHash", "00000000");
@@ -167,7 +167,7 @@ public class DatabaseEngine {
     		JSONObject log = null;
     		JSONArray trans = null;
     		if (logFile.exists()) {
-    			log = Util.readJsonFile(dataDir + "/log.json");
+    			log = Util.readJsonFile(dataDir + "log.json");
     			trans = log.getJSONArray("Transactions");
     			
     		}
@@ -190,7 +190,7 @@ public class DatabaseEngine {
             }
             trans.put(transaction);
             log.put("BlockNumber", blockNum);
-	    	BufferedWriter logWriter = new BufferedWriter(new FileWriter(dataDir + "/log.json"));
+	    	BufferedWriter logWriter = new BufferedWriter(new FileWriter(dataDir + "log.json"));
 	    	log.write(logWriter);
 	 //   	logWriter.flush();
 	    	logWriter.close();
@@ -244,9 +244,9 @@ public class DatabaseEngine {
     	if (value < 0) return false;
        // ReadWriteLock lock = getLock(userId);
         RWLock.writeLock().lock();
+        int balance = getOrZero(userId);
+    	if (balance - value < 0) return false;
         try{
-        	int balance = getOrZero(userId);
-        	if (balance - value < 0) return false;
         	balances.put(userId, balance - value);
         	
           	return true;
