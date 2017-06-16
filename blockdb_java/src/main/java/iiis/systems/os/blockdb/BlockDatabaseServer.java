@@ -121,7 +121,7 @@ public class BlockDatabaseServer {
     
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
-    	//testDatabaseOperation(1, 1, 1);
+    	//testDatabaseOperation(0, 1, 0);
     	
     	JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
@@ -176,12 +176,13 @@ public class BlockDatabaseServer {
         }
 
         @Override
-        public void transfer(TransferRequest request, StreamObserver<BooleanResponse> responseObserver) {
-            boolean success = dbEngine.transfer(request.getFromID(), request.getToID(), request.getValue());
+        public void transfer(Transaction trans, StreamObserver<BooleanResponse> responseObserver) {
+            boolean success = dbEngine.transfer(trans.getFromID(), trans.getToID(), trans.getValue());
             BooleanResponse response = BooleanResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
+        
 
         @Override
         public void logLength(Null request, StreamObserver<GetResponse> responseObserver) {

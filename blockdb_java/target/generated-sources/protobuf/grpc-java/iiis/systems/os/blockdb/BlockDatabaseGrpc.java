@@ -13,6 +13,10 @@ import static io.grpc.stub.ServerCalls.asyncServerStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncClientStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncBidiStreamingCall;
 import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
+
+import io.grpc.ClientCall;
+import io.grpc.stub.StreamObserver;
+
 import static io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall;
 
 /**
@@ -39,51 +43,66 @@ public final class BlockDatabaseGrpc {
               "blockdb.BlockDatabase", "Get"),
           io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.GetRequest.getDefaultInstance()),
           io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.GetResponse.getDefaultInstance()));
+  
   @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Request,
-      iiis.systems.os.blockdb.BooleanResponse> METHOD_PUT =
-      io.grpc.MethodDescriptor.create(
-          io.grpc.MethodDescriptor.MethodType.UNARY,
-          generateFullMethodName(
-              "blockdb.BlockDatabase", "Put"),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Request.getDefaultInstance()),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.BooleanResponse.getDefaultInstance()));
-  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Request,
-      iiis.systems.os.blockdb.BooleanResponse> METHOD_WITHDRAW =
-      io.grpc.MethodDescriptor.create(
-          io.grpc.MethodDescriptor.MethodType.UNARY,
-          generateFullMethodName(
-              "blockdb.BlockDatabase", "Withdraw"),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Request.getDefaultInstance()),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.BooleanResponse.getDefaultInstance()));
-  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Request,
-      iiis.systems.os.blockdb.BooleanResponse> METHOD_DEPOSIT =
-      io.grpc.MethodDescriptor.create(
-          io.grpc.MethodDescriptor.MethodType.UNARY,
-          generateFullMethodName(
-              "blockdb.BlockDatabase", "Deposit"),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Request.getDefaultInstance()),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.BooleanResponse.getDefaultInstance()));
-  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.TransferRequest,
+  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Transaction,
       iiis.systems.os.blockdb.BooleanResponse> METHOD_TRANSFER =
       io.grpc.MethodDescriptor.create(
           io.grpc.MethodDescriptor.MethodType.UNARY,
           generateFullMethodName(
               "blockdb.BlockDatabase", "Transfer"),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.TransferRequest.getDefaultInstance()),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Transaction.getDefaultInstance()),
           io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.BooleanResponse.getDefaultInstance()));
+  
   @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
-  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Null,
-      iiis.systems.os.blockdb.GetResponse> METHOD_LOG_LENGTH =
+  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Transaction,
+      iiis.systems.os.blockdb.VerifyResponse> METHOD_VERIFY =
       io.grpc.MethodDescriptor.create(
           io.grpc.MethodDescriptor.MethodType.UNARY,
           generateFullMethodName(
-              "blockdb.BlockDatabase", "LogLength"),
+              "blockdb.BlockDatabase", "Verify"),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Transaction.getDefaultInstance()),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.VerifyResponse.getDefaultInstance()));
+  
+  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
+  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Null,
+      iiis.systems.os.blockdb.GetHeightResponse> METHOD_GETHEIGHT =
+      io.grpc.MethodDescriptor.create(
+          io.grpc.MethodDescriptor.MethodType.UNARY,
+          generateFullMethodName(
+              "blockdb.BlockDatabase", "GetHeight"),
           io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Null.getDefaultInstance()),
-          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.GetResponse.getDefaultInstance()));
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.GetHeightResponse.getDefaultInstance()));
+  
+  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
+  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.GetBlockRequest,
+      iiis.systems.os.blockdb.JsonBlockString> METHOD_GETBLOCK =
+      io.grpc.MethodDescriptor.create(
+          io.grpc.MethodDescriptor.MethodType.UNARY,
+          generateFullMethodName(
+              "blockdb.BlockDatabase", "GetBlock"),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.GetBlockRequest.getDefaultInstance()),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.JsonBlockString.getDefaultInstance()));
+  
+  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
+  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.JsonBlockString,
+      iiis.systems.os.blockdb.Null> METHOD_PUSHBLOCK =
+      io.grpc.MethodDescriptor.create(
+          io.grpc.MethodDescriptor.MethodType.UNARY,
+          generateFullMethodName(
+              "blockdb.BlockDatabase", "PushBlock"),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.JsonBlockString.getDefaultInstance()),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Null.getDefaultInstance()));
+  
+  @io.grpc.ExperimentalApi("https://github.com/grpc/grpc-java/issues/1901")
+  public static final io.grpc.MethodDescriptor<iiis.systems.os.blockdb.Transaction,
+      iiis.systems.os.blockdb.Null> METHOD_PUSHTRANSACTION =
+      io.grpc.MethodDescriptor.create(
+          io.grpc.MethodDescriptor.MethodType.UNARY,
+          generateFullMethodName(
+              "blockdb.BlockDatabase", "PushTransaction"),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Transaction.getDefaultInstance()),
+          io.grpc.protobuf.ProtoUtils.marshaller(iiis.systems.os.blockdb.Null.getDefaultInstance()));
 
   /**
    * Creates a new async stub that supports all call types for the service
@@ -124,15 +143,27 @@ public final class BlockDatabaseGrpc {
         io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.GetResponse> responseObserver) {
       asyncUnimplementedUnaryCall(METHOD_GET, responseObserver);
     }
+    
+    /**
+     * <pre>
+     * Perform db[FromID]-=Value and db[ToID]+=Value
+     * Return Success=false if FromID is same as ToID or balance of FromID is insufficient
+     * </pre>
+     */
+    public void transfer(iiis.systems.os.blockdb.Transaction trans,
+        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse> responseObserver) {
+      asyncUnimplementedUnaryCall(METHOD_TRANSFER, responseObserver);
+    }
+
 
     /**
      * <pre>
      * Set db[UserID]=Value
      * </pre>
      */
-    public void put(iiis.systems.os.blockdb.Request request,
-        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse> responseObserver) {
-      asyncUnimplementedUnaryCall(METHOD_PUT, responseObserver);
+    public void verify(iiis.systems.os.blockdb.Transaction trans,
+        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.VerifyResponse> responseObserver) {
+      asyncUnimplementedUnaryCall(METHOD_VERIFY, responseObserver);
     }
 
     /**
@@ -140,9 +171,9 @@ public final class BlockDatabaseGrpc {
      * Perform db[UserID]+=Value
      * </pre>
      */
-    public void withdraw(iiis.systems.os.blockdb.Request request,
-        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse> responseObserver) {
-      asyncUnimplementedUnaryCall(METHOD_WITHDRAW, responseObserver);
+    public void getHeight(iiis.systems.os.blockdb.Null request,
+        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.GetHeightResponse> responseObserver) {
+      asyncUnimplementedUnaryCall(METHOD_GETHEIGHT, responseObserver);
     }
 
     /**
@@ -151,31 +182,30 @@ public final class BlockDatabaseGrpc {
      * Return Success=false if balance is insufficient
      * </pre>
      */
-    public void deposit(iiis.systems.os.blockdb.Request request,
-        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse> responseObserver) {
-      asyncUnimplementedUnaryCall(METHOD_DEPOSIT, responseObserver);
+    public void getBlock(iiis.systems.os.blockdb.GetBlockRequest request,
+        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.JsonBlockString> responseObserver) {
+      asyncUnimplementedUnaryCall(METHOD_GETBLOCK, responseObserver);
     }
 
-    /**
-     * <pre>
-     * Perform db[FromID]-=Value and db[ToID]+=Value
-     * Return Success=false if FromID is same as ToID or balance of FromID is insufficient
-     * </pre>
-     */
-    public void transfer(iiis.systems.os.blockdb.TransferRequest request,
-        io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse> responseObserver) {
-      asyncUnimplementedUnaryCall(METHOD_TRANSFER, responseObserver);
-    }
+    public void pushBlock(iiis.systems.os.blockdb.JsonBlockString request,
+            io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.Null> responseObserver) {
+          asyncUnimplementedUnaryCall(METHOD_PUSHBLOCK, responseObserver);
+        }
+    
+    public void pushTransaction(iiis.systems.os.blockdb.Transaction trans,
+            io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.Null> responseObserver) {
+          asyncUnimplementedUnaryCall(METHOD_PUSHTRANSACTION, responseObserver);
+        }
 
     /**
      * <pre>
      * Return the length of transient (non-block) log on disk
      * </pre>
      */
-    public void logLength(iiis.systems.os.blockdb.Null request,
+  /*  public void logLength(iiis.systems.os.blockdb.Null request,
         io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.GetResponse> responseObserver) {
       asyncUnimplementedUnaryCall(METHOD_LOG_LENGTH, responseObserver);
-    }
+    }*/
 
     @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
       return io.grpc.ServerServiceDefinition.builder(getServiceDescriptor())
@@ -187,40 +217,47 @@ public final class BlockDatabaseGrpc {
                 iiis.systems.os.blockdb.GetResponse>(
                   this, METHODID_GET)))
           .addMethod(
-            METHOD_PUT,
+                  METHOD_TRANSFER,
+                  asyncUnaryCall(
+                    new MethodHandlers<
+                      iiis.systems.os.blockdb.Transaction,
+                      iiis.systems.os.blockdb.BooleanResponse>(
+                        this, METHODID_TRANSFER)))
+          .addMethod(
+            METHOD_VERIFY,
             asyncUnaryCall(
               new MethodHandlers<
-                iiis.systems.os.blockdb.Request,
-                iiis.systems.os.blockdb.BooleanResponse>(
-                  this, METHODID_PUT)))
+                iiis.systems.os.blockdb.Transaction,
+                iiis.systems.os.blockdb.VerifyResponse>(
+                  this, METHODID_VERIFY)))
           .addMethod(
-            METHOD_WITHDRAW,
-            asyncUnaryCall(
-              new MethodHandlers<
-                iiis.systems.os.blockdb.Request,
-                iiis.systems.os.blockdb.BooleanResponse>(
-                  this, METHODID_WITHDRAW)))
-          .addMethod(
-            METHOD_DEPOSIT,
-            asyncUnaryCall(
-              new MethodHandlers<
-                iiis.systems.os.blockdb.Request,
-                iiis.systems.os.blockdb.BooleanResponse>(
-                  this, METHODID_DEPOSIT)))
-          .addMethod(
-            METHOD_TRANSFER,
-            asyncUnaryCall(
-              new MethodHandlers<
-                iiis.systems.os.blockdb.TransferRequest,
-                iiis.systems.os.blockdb.BooleanResponse>(
-                  this, METHODID_TRANSFER)))
-          .addMethod(
-            METHOD_LOG_LENGTH,
+            METHOD_GETHEIGHT,
             asyncUnaryCall(
               new MethodHandlers<
                 iiis.systems.os.blockdb.Null,
-                iiis.systems.os.blockdb.GetResponse>(
-                  this, METHODID_LOG_LENGTH)))
+                iiis.systems.os.blockdb.GetHeightResponse>(
+                  this, METHODID_GETHEIGHT)))
+          .addMethod(
+            METHOD_GETBLOCK,
+            asyncUnaryCall(
+              new MethodHandlers<
+                iiis.systems.os.blockdb.GetBlockRequest,
+                iiis.systems.os.blockdb.JsonBlockString>(
+                  this, METHODID_GETBLOCK)))
+          .addMethod(
+            METHOD_PUSHBLOCK,
+            asyncUnaryCall(
+              new MethodHandlers<
+                iiis.systems.os.blockdb.JsonBlockString,
+                iiis.systems.os.blockdb.Null>(
+                  this, METHODID_PUSHBLOCK)))
+          .addMethod(
+                  METHOD_PUSHTRANSACTION,
+                  asyncUnaryCall(
+                    new MethodHandlers<
+                      iiis.systems.os.blockdb.Transaction,
+                      iiis.systems.os.blockdb.Null>(
+                        this, METHODID_PUSHTRANSACTION)))
           .build();
     }
   }
@@ -297,13 +334,15 @@ public final class BlockDatabaseGrpc {
      * Return Success=false if FromID is same as ToID or balance of FromID is insufficient
      * </pre>
      */
-    public void transfer(iiis.systems.os.blockdb.TransferRequest request,
+    public void transfer(iiis.systems.os.blockdb.Transaction trans,
         io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse> responseObserver) {
       asyncUnaryCall(
-          getChannel().newCall(METHOD_TRANSFER, getCallOptions()), request, responseObserver);
+          getChannel().newCall(METHOD_TRANSFER, getCallOptions()), trans, responseObserver);
     }
 
-    /**
+   
+
+	/**
      * <pre>
      * Return the length of transient (non-block) log on disk
      * </pre>
@@ -383,9 +422,9 @@ public final class BlockDatabaseGrpc {
      * Return Success=false if FromID is same as ToID or balance of FromID is insufficient
      * </pre>
      */
-    public iiis.systems.os.blockdb.BooleanResponse transfer(iiis.systems.os.blockdb.TransferRequest request) {
+    public iiis.systems.os.blockdb.BooleanResponse transfer(iiis.systems.os.blockdb.Transaction trans) {
       return blockingUnaryCall(
-          getChannel(), METHOD_TRANSFER, getCallOptions(), request);
+          getChannel(), METHOD_TRANSFER, getCallOptions(), trans);
     }
 
     /**
@@ -472,9 +511,9 @@ public final class BlockDatabaseGrpc {
      * </pre>
      */
     public com.google.common.util.concurrent.ListenableFuture<iiis.systems.os.blockdb.BooleanResponse> transfer(
-        iiis.systems.os.blockdb.TransferRequest request) {
+        iiis.systems.os.blockdb.Transaction trans) {
       return futureUnaryCall(
-          getChannel().newCall(METHOD_TRANSFER, getCallOptions()), request);
+          getChannel().newCall(METHOD_TRANSFER, getCallOptions()), trans);
     }
 
     /**
@@ -490,11 +529,12 @@ public final class BlockDatabaseGrpc {
   }
 
   private static final int METHODID_GET = 0;
-  private static final int METHODID_PUT = 1;
-  private static final int METHODID_WITHDRAW = 2;
-  private static final int METHODID_DEPOSIT = 3;
-  private static final int METHODID_TRANSFER = 4;
-  private static final int METHODID_LOG_LENGTH = 5;
+  private static final int METHODID_TRANSFER = 1;
+  private static final int METHODID_VERIFY = 2;
+  private static final int METHODID_GETHEIGHT = 3;
+  private static final int METHODID_GETBLOCK = 4;
+  private static final int METHODID_PUSHBLOCK = 5;
+  private static final int METHODID_PUSHTRANSACTION = 6;
 
   private static final class MethodHandlers<Req, Resp> implements
       io.grpc.stub.ServerCalls.UnaryMethod<Req, Resp>,
@@ -517,9 +557,9 @@ public final class BlockDatabaseGrpc {
           serviceImpl.get((iiis.systems.os.blockdb.GetRequest) request,
               (io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.GetResponse>) responseObserver);
           break;
-        case METHODID_PUT:
-          serviceImpl.put((iiis.systems.os.blockdb.Request) request,
-              (io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse>) responseObserver);
+        case METHODID_Verify:
+          serviceImpl.verify((iiis.systems.os.blockdb.Transaction) trans,
+              (io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.VerifyResponse>) responseObserver);
           break;
         case METHODID_WITHDRAW:
           serviceImpl.withdraw((iiis.systems.os.blockdb.Request) request,
@@ -530,7 +570,7 @@ public final class BlockDatabaseGrpc {
               (io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse>) responseObserver);
           break;
         case METHODID_TRANSFER:
-          serviceImpl.transfer((iiis.systems.os.blockdb.TransferRequest) request,
+          serviceImpl.transfer((iiis.systems.os.blockdb.Transaction) request,
               (io.grpc.stub.StreamObserver<iiis.systems.os.blockdb.BooleanResponse>) responseObserver);
           break;
         case METHODID_LOG_LENGTH:

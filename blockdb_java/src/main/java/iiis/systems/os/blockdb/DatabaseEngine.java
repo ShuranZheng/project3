@@ -155,6 +155,7 @@ public class DatabaseEngine {
     			log.put("BlockID", blockNum);
     			log.put("Nonce", "00000000");
     			log.put("PrevHash", "00000000");
+    			log.remove("BlockNumber");
     			log.write(blockWriter);
     			blockWriter.close();
     			logLength = 0;
@@ -251,7 +252,6 @@ public class DatabaseEngine {
     	}
         try{
         	balances.put(userId, balance - value);
-        	
           	return true;
       
         }
