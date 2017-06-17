@@ -1,5 +1,6 @@
 package iiis.systems.os.blockdb;
 
+import io.grpc.ManagedChannel;
 import io.grpc.Server;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
@@ -16,6 +17,7 @@ import iiis.systems.os.blockchaindb.GetRequest;
 import iiis.systems.os.blockchaindb.GetResponse;
 import iiis.systems.os.blockchaindb.JsonBlockString;
 import iiis.systems.os.blockchaindb.Transaction;
+import iiis.systems.os.blockchaindb.BlockChainMinerGrpc.BlockChainMinerBlockingStub;
 import iiis.systems.os.blockchaindb.BlockChainMinerGrpc.BlockChainMinerImplBase;
 import iiis.systems.os.blockchaindb.GetHeightResponse;
 import iiis.systems.os.blockchaindb.VerifyResponse;
@@ -58,12 +60,17 @@ public class BlockDatabaseServer {
         }
     }
     
+    static String me;
+    static JSONObject conf;
+    
+    
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
     	//testDatabaseOperation(0, 1, 0);
-    	String me = args[0].substring(args[0].indexOf('=') + 1);
+    	me = args[0].substring(args[0].indexOf('=') + 1);
     	//System.out.println(me);
     	JSONObject config = Util.readJsonFile("config.json");
+    	conf = config;
         config = (JSONObject)config.get(me);
         String address = config.getString("ip");
         int port = Integer.parseInt(config.getString("port"));
@@ -79,6 +86,7 @@ public class BlockDatabaseServer {
         	server.blockUntilShutdown();
         }
     }
+    
     
     
     static class BlockChainMinerImpl extends BlockChainMinerImplBase {
@@ -129,7 +137,23 @@ public class BlockDatabaseServer {
          */
         @Override
         public void transfer(Transaction trans, StreamObserver<BooleanResponse> responseObserver) {
-            boolean success = dbEngine.transfer(trans.getFromID(), trans.getToID(), trans.getValue());
+            boolean success = dbEngine.transfer(trans);
+            if (!success) {
+	            BooleanResponse response = BooleanResponse.newBuilder().setSuccess(success).build();
+	            responseObserver.onNext(response);
+	            responseObserver.onCompleted();
+	            return;
+            }
+            
+            int nservers = conf.getInt("nservers");
+            for (int i = 1; i<= nservers; i++)
+            if (!Integer.toString(i).equals(me)){
+            	JSONObject config = (JSONObject)conf.get(Integer.toString(i));
+                String address = config.getString("ip");
+                int port = Integer.parseInt(config.getString("port"));
+               Client c = new Client(address, port);
+               c.pushTrans(trans);
+            }
             BooleanResponse response = BooleanResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
@@ -189,9 +213,9 @@ public class BlockDatabaseServer {
              * </pre>
              */
         @Override
-            public void pushTransaction(Transaction request,
+            public void pushTransaction(Transaction trans,
                 StreamObserver<Null> responseObserver) {
-              
+              dbEngine.transfer(trans);
             }
 
        /* @Override

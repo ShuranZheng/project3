@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -112,6 +114,7 @@ public class DatabaseEngine {
 
     public static final boolean FAIR = true;
     private HashMap<String, Integer> balances = new HashMap<>();
+    private Set<String> uuid = new HashSet<>();
  //   private HashMap<String, ReadWriteLock> locks = new HashMap<>();
     private int logLength = 0, blockNum = 0;
     private final int N = 50;
@@ -136,7 +139,8 @@ public class DatabaseEngine {
         if (balances.containsKey(userId)) {
             return balances.get(userId);
         } else {
-            return 0;
+        	balances.put(userId, 1000);
+            return 1000;
         }
     }
 
@@ -275,8 +279,15 @@ public class DatabaseEngine {
         }
     }
 
-    public boolean transfer(String fromId, String toId, int value) {
-        if ((value < 0) || (fromId.equals(toId))) return false;
+    public boolean transfer(Transaction trans) {
+    	if (uuid.contains(trans.getUUID())) return false;
+    	uuid.add(trans.getUUID());
+    	int value = trans.getValue();
+    	int fee = trans.getMiningFee();
+    	String fromId = trans.getFromID();
+    	String toId = trans.getToID();
+    	
+        if ((value - fee < 0) || (fee < 0) || (fromId.equals(toId))) return false;
        // ReadWriteLock fromLock = getLock(fromId);
         RWLock.writeLock().lock();
         try{
@@ -291,22 +302,24 @@ public class DatabaseEngine {
         RWLock.writeLock().lock();
         try{
         	int toBalance = getOrZero(toId);
-        	balances.put(toId, toBalance + value);
-        	
-        	//System.out.println(balances.get(fromId));
-            return true;
-            
-        }
-        finally{
+        	balances.put(toId, toBalance + value - fee);
         	 //***********************************
             //Write the log
             writeLog("TRANSFER", fromId, toId, value);
             //*************************************
+        	
+        	//System.out.println(balances.get(fromId));
+
+            return true;            
+        }
+        finally{
         	RWLock.writeLock().unlock();
         }
-       
+        
     }
 
+    
+    
     public int getLogLength() {
         return logLength;
     }
