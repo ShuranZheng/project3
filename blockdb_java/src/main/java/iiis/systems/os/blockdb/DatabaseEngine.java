@@ -11,6 +11,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import iiis.systems.os.blockchaindb.Null;
+import iiis.systems.os.blockchaindb.BooleanResponse;
+import iiis.systems.os.blockchaindb.GetRequest;
+import iiis.systems.os.blockchaindb.GetResponse;
+import iiis.systems.os.blockchaindb.Transaction;
+import iiis.systems.os.blockchaindb.BlockChainMinerGrpc.BlockChainMinerImplBase;
+import iiis.systems.os.blockchaindb.GetHeightResponse;
+import iiis.systems.os.blockchaindb.VerifyResponse;
+import iiis.systems.os.blockchaindb.VerifyResponse.Results;
+
 public class DatabaseEngine {
     private static DatabaseEngine instance = null;
 
@@ -299,5 +309,15 @@ public class DatabaseEngine {
 
     public int getLogLength() {
         return logLength;
+    }
+    
+    public VerifyResult verify(Transaction trans){
+    	VerifyResult v = new VerifyResult(Results.FAILED, "");
+    	return v;
+    }
+    
+    public GetHeightResult getHeight(){
+    	GetHeightResult g = new GetHeightResult(0, "");
+    	return g;
     }
 }

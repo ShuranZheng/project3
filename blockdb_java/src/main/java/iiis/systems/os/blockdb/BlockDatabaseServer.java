@@ -8,16 +8,32 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
+import iiis.systems.os.blockchaindb.Null;
+import iiis.systems.os.blockchaindb.BooleanResponse;
+import iiis.systems.os.blockchaindb.GetBlockRequest;
+import iiis.systems.os.blockchaindb.GetRequest;
+import iiis.systems.os.blockchaindb.GetResponse;
+import iiis.systems.os.blockchaindb.JsonBlockString;
+import iiis.systems.os.blockchaindb.Transaction;
+import iiis.systems.os.blockchaindb.BlockChainMinerGrpc.BlockChainMinerImplBase;
+import iiis.systems.os.blockchaindb.GetHeightResponse;
+import iiis.systems.os.blockchaindb.VerifyResponse;
+import iiis.systems.os.blockchaindb.VerifyResponse.Results;
+
+import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+
 
 public class BlockDatabaseServer {
     private Server server;
 
     private void start(String address, int port) throws IOException {
         server = NettyServerBuilder.forAddress(new InetSocketAddress(address, port))
-                .addService(new BlockDatabaseImpl())
+                .addService(new BlockChainMinerImpl())
                 .build()
                 .start();
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -42,89 +58,13 @@ public class BlockDatabaseServer {
         }
     }
     
-    static public void testDatabaseOperation( int D, int W, int T) throws IOException{
-    	String dataDir = "aaa/";
-    	DatabaseEngine.setup(dataDir);
-    	final DatabaseEngine dbEngine = DatabaseEngine.getInstance();
-    	if (!dbEngine.recover()) {
-        	System.out.println("Fail to start the database.");
-        	return;
-    	}
-		Thread t1 = new Thread(new Runnable(){
-		    public void run(){
-		    	for (int i = 0; i < 70; i++){
-		    		System.out.println(Integer.toString(i) + " deposit " + Boolean.toString(dbEngine.deposit(Integer.toString(i), 100)));
-		    		dbEngine.get(Integer.toString(i));
-		    		/*try {
-		    		Thread.sleep(1000);
-		    		} catch(InterruptedException e){
-		    			e.printStackTrace();
-		    		}*/
-		    	}
-		    }
-		});
-		if (D == 1) t1.start();
-		
-		Thread t2 = new Thread(new Runnable(){
-		    public void run(){
-		    	for (int i = 0; i < 70; i++){
-		    		
-		    		System.out.println(Integer.toString(i) + " withdraw " + Boolean.toString(dbEngine.withdraw(Integer.toString(i), 50)));
-		    		dbEngine.get(Integer.toString(i));
-		    		/*try {
-		    		Thread.sleep(1000);
-		    		} catch(InterruptedException e){
-		    			e.printStackTrace();
-		    		}*/
-		    	}
-		    }
-		});
-		if (W == 1) t2.start();
-		
-		
-		Thread t3 = new Thread(new Runnable(){
-		    public void run(){
-		    	/*try{
-		    		Thread.sleep(100);
-		    		}catch (Exception e){
-		    			e.printStackTrace();
-		    		}*/
-		    	for (int i = 0; i < 70; i++){
-		    		System.out.println(Integer.toString(i) + " transfer " + Boolean.toString(dbEngine.transfer(Integer.toString(i),Integer.toString(i+1), 50)));
-		    		dbEngine.get(Integer.toString(i));
-		    		/*try {
-		    		Thread.sleep(1000);
-		    		} catch(InterruptedException e){
-		    			e.printStackTrace();
-		    		}*/
-		    	}
-		    }
-		});
-		if (T == 1) t3.start();
-		
-		/*for (int i=0; i< 1000; i++){
-			Thread t = new Thread(new Runnable(){
-			    public void run(){
-			    		System.out.println(Integer.toString(0) + " deposit " + Boolean.toString(dbEngine.deposit(Integer.toString(0), 10)));
-			    		dbEngine.get(Integer.toString(0));
-			    		try {
-			    		Thread.sleep(1000);
-			    		} catch(InterruptedException e){
-			    			e.printStackTrace();
-			    		}
-			    	}
-				});
-				t.start();
-		}*/
-		System.out.println(dbEngine.get("0"));
-    }
-    
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
     	
     	//testDatabaseOperation(0, 1, 0);
-    	
+    	String me = args[0].substring(args[0].indexOf('=') + 1);
+    	//System.out.println(me);
     	JSONObject config = Util.readJsonFile("config.json");
-        config = (JSONObject)config.get("1");
+        config = (JSONObject)config.get(me);
         String address = config.getString("ip");
         int port = Integer.parseInt(config.getString("port"));
         String dataDir = config.getString("dataDir");
@@ -139,10 +79,16 @@ public class BlockDatabaseServer {
         	server.blockUntilShutdown();
         }
     }
-
-    static class BlockDatabaseImpl extends BlockDatabaseGrpc.BlockDatabaseImplBase {
+    
+    
+    static class BlockChainMinerImpl extends BlockChainMinerImplBase {
         private final DatabaseEngine dbEngine = DatabaseEngine.getInstance();
-
+        
+        /**
+         * <pre>
+         * Return UserID's Balance on the Chain, after considering the latest valid block. Pending transactions have no effect on Get()
+         * </pre>
+         */
         @Override
         public void get(GetRequest request, StreamObserver<GetResponse> responseObserver) {
             int value = dbEngine.get(request.getUserID());
@@ -151,7 +97,7 @@ public class BlockDatabaseServer {
             responseObserver.onCompleted();
         }
 
-        @Override
+      /*  @Override
         public void put(Request request, StreamObserver<BooleanResponse> responseObserver) {
             boolean success = dbEngine.put(request.getUserID(), request.getValue());
             BooleanResponse response = BooleanResponse.newBuilder().setSuccess(success).build();
@@ -173,8 +119,14 @@ public class BlockDatabaseServer {
             BooleanResponse response = BooleanResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        }
-
+        }*/
+        
+        /**
+         * <pre>
+         * Receive and Broadcast Transaction: balance[FromID]-=Value, balance[ToID]+=(Value-MiningFee), balance[MinerID]+=MiningFee
+         * Return Success=false if FromID is same as ToID or latest balance of FromID is insufficient
+         * </pre>
+         */
         @Override
         public void transfer(Transaction trans, StreamObserver<BooleanResponse> responseObserver) {
             boolean success = dbEngine.transfer(trans.getFromID(), trans.getToID(), trans.getValue());
@@ -183,13 +135,71 @@ public class BlockDatabaseServer {
             responseObserver.onCompleted();
         }
         
-
+        /**
+         * <pre>
+         * Check if a transaction has been written into a block, or is still waiting, or is invalid on the longest branch.
+         * </pre>
+         */
         @Override
+        public void verify(Transaction trans, StreamObserver<VerifyResponse> responseObserver){
+        	VerifyResult v = dbEngine.verify(trans);
+            VerifyResponse response = VerifyResponse.newBuilder().setResult(v.result).setBlockHash(v.blockHash).build();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+        
+        /**
+         * <pre>
+         * Get the current blockchain length; use the longest branch if multiple branch exist.
+         * </pre>
+         */
+        @Override
+        public void getHeight(Null request, StreamObserver<GetHeightResponse> responseObserver){
+        	GetHeightResult g = dbEngine.getHeight();
+        	GetHeightResponse response = GetHeightResponse.newBuilder().setHeight(g.height).setLeafHash(g.leafHash).build();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+        
+        
+        /**
+         * <pre>
+         * Get the Json representation of the block with BlockHash hash value
+         * </pre>
+         */
+        @Override
+        public void getBlock(GetBlockRequest request,
+                StreamObserver<JsonBlockString> responseObserver) {
+            }
+
+            /**
+             * <pre>
+             * Send a block to another server
+             * </pre>
+             */
+        @Override
+            public void pushBlock(JsonBlockString request,
+                StreamObserver<Null> responseObserver) {
+              
+            }
+
+            /**
+             * <pre>
+             * Send a transaction to another server
+             * </pre>
+             */
+        @Override
+            public void pushTransaction(Transaction request,
+                StreamObserver<Null> responseObserver) {
+              
+            }
+
+       /* @Override
         public void logLength(Null request, StreamObserver<GetResponse> responseObserver) {
             int value = dbEngine.getLogLength();
             GetResponse response = GetResponse.newBuilder().setValue(value).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-        }
+        }*/
     }
 }
