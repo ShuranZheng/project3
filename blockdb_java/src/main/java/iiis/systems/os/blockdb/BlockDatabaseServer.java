@@ -78,13 +78,13 @@ public class BlockDatabaseServer {
 
         DatabaseEngine.setup(dataDir);
         DatabaseEngine dbEngine = DatabaseEngine.getInstance();
-        if (!dbEngine.recover()) {
-        	System.out.println("Fail to start the database.");
-        }else{
+       // if (!dbEngine.recover()) {
+       // 	System.out.println("Fail to start the database.");
+        //}else{
         	final BlockDatabaseServer server = new BlockDatabaseServer();
         	server.start(address, port);
         	server.blockUntilShutdown();
-        }
+        //}
     }
     
     
@@ -194,6 +194,10 @@ public class BlockDatabaseServer {
         @Override
         public void getBlock(GetBlockRequest request,
                 StreamObserver<JsonBlockString> responseObserver) {
+        			String result = dbEngine.getBlock(request.getBlockHash());
+        			JsonBlockString response = JsonBlockString.newBuilder().setJson(result).build();
+        			responseObserver.onNext(response);
+        			responseObserver.onCompleted();
             }
 
             /**
@@ -204,7 +208,7 @@ public class BlockDatabaseServer {
         @Override
             public void pushBlock(JsonBlockString request,
                 StreamObserver<Null> responseObserver) {
-              
+              dbEngine.pushBlock(request);
             }
 
             /**

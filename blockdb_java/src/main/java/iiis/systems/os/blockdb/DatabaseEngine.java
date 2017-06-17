@@ -4,10 +4,15 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.json.JSONArray;
@@ -17,11 +22,13 @@ import iiis.systems.os.blockchaindb.Null;
 import iiis.systems.os.blockchaindb.BooleanResponse;
 import iiis.systems.os.blockchaindb.GetRequest;
 import iiis.systems.os.blockchaindb.GetResponse;
+import iiis.systems.os.blockchaindb.JsonBlockString;
 import iiis.systems.os.blockchaindb.Transaction;
 import iiis.systems.os.blockchaindb.BlockChainMinerGrpc.BlockChainMinerImplBase;
 import iiis.systems.os.blockchaindb.GetHeightResponse;
 import iiis.systems.os.blockchaindb.VerifyResponse;
 import iiis.systems.os.blockchaindb.VerifyResponse.Results;
+import iiis.systems.os.blockdb.hash.Hash;
 
 public class DatabaseEngine {
     private static DatabaseEngine instance = null;
@@ -114,12 +121,17 @@ public class DatabaseEngine {
 
     public static final boolean FAIR = true;
     private HashMap<String, Integer> balances = new HashMap<>();
-    private Set<String> uuid = new HashSet<>();
+    private HashMap<String, Integer> approved = new HashMap<>();
+    private ArrayList<String> blockStrings = new ArrayList<>();
+    private LinkedList<Transaction> pendingTrans = new LinkedList<>();
+    private HashMap<String, Integer> uuid = new HashMap<>();
  //   private HashMap<String, ReadWriteLock> locks = new HashMap<>();
     private int logLength = 0, blockNum = 0;
     private final int N = 50;
     private ReadWriteLock RWLock = new ReentrantReadWriteLock(FAIR);
+    private ReadWriteLock appLock = new ReentrantReadWriteLock(FAIR);
     private String dataDir;
+    private int height = 0;
 
     DatabaseEngine(String dataDir) {
         this.dataDir = dataDir;
@@ -146,12 +158,13 @@ public class DatabaseEngine {
 
     public int get(String userId) {
        // ReadWriteLock lock = getLock(userId);
-        RWLock.readLock().lock();
+        appLock.readLock().lock();
         try{
-            return getOrZero(userId);
+        	if (!approved.containsKey(userId)) return 1000;
+        	else return approved.get(userId);
         }
         finally{
-        	RWLock.readLock().unlock();
+        	appLock.readLock().unlock();
         }   
     }
     
@@ -165,7 +178,7 @@ public class DatabaseEngine {
     		if (logLength ==  N) {
     			blockNum ++;
     			JSONObject log = Util.readJsonFile(dataDir + "log.json");
-    			BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir  + Integer.toString(blockNum) + ".json"));
+    			BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir  + "T" + Integer.toString(blockNum) + ".json"));
     			log.put("BlockID", blockNum);
     			log.put("Nonce", "00000000");
     			log.put("PrevHash", "00000000");
@@ -280,8 +293,7 @@ public class DatabaseEngine {
     }
 
     public boolean transfer(Transaction trans) {
-    	if (uuid.contains(trans.getUUID())) return false;
-    	uuid.add(trans.getUUID());
+    	if (uuid.containsKey(trans.getUUID())) return false;
     	int value = trans.getValue();
     	int fee = trans.getMiningFee();
     	String fromId = trans.getFromID();
@@ -303,6 +315,8 @@ public class DatabaseEngine {
         try{
         	int toBalance = getOrZero(toId);
         	balances.put(toId, toBalance + value - fee);
+        	pendingTrans.add(trans);
+        	uuid.put(trans.getUUID(), -1);
         	 //***********************************
             //Write the log
             writeLog("TRANSFER", fromId, toId, value);
@@ -317,20 +331,89 @@ public class DatabaseEngine {
         }
         
     }
-
     
+    public boolean approvedTransfer(String fromId, String toId, int value, int fee, int mul){
+    	if (!approved.containsKey(fromId)) approved.put(fromId, 1000);
+		if (!approved.containsKey(toId)) approved.put(toId, 1000);
+		int from = approved.get(fromId);
+		approved.put(fromId, from - value*mul);
+		int to = approved.get(toId);
+		approved.put(toId, to + (value -fee)*mul);
+		if (mul == 1 && from - value*mul < 0) return false;
+		return true;
+    }
+
+    public void pushBlock(JsonBlockString request){
+    	appLock.writeLock().lock();
+    	try{
+    	String json = request.getJson();
+    	JSONObject req = new JSONObject(request.getJson());
+    	String prev = req.getString("PrevHash");
+    	if (height > 0 && Hash.getHashString(blockStrings.get(height - 1)) != prev) return;
+    	if (!Hash.checkHash(json)) return;
+    	
+    	height++;
+    	blockStrings.add(json);
+    	try{
+    	BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir  + Integer.toString(height) + ".json"));
+    	blockWriter.write(json);
+		blockWriter.close();
+    	}catch (IOException e){
+    		e.printStackTrace();
+    	}
+    	
+    	JSONArray records = req.getJSONArray("Transactions");
+    	for (int i = 0; i < records.length(); i++){
+    		JSONObject trans = records.getJSONObject(i);
+    		String fromId = trans.getString("FromID");
+    		String toId = trans.getString("ToID");
+    		int value = trans.getInt("Value");
+    		int fee = trans.getInt("MiningFee");
+    		if (!approvedTransfer(fromId, toId, value, fee, 1)){
+    			for (int j = 0; j <= i; j++){
+    				JSONObject transJ = records.getJSONObject(j);
+    	    		String fromIdJ = transJ.getString("FromID");
+    	    		String toIdJ = transJ.getString("ToID");
+    	    		int valueJ = transJ.getInt("Value");
+    	    		int feeJ = transJ.getInt("MiningFee");
+    	    		approvedTransfer(fromIdJ, toIdJ, valueJ, feeJ, -1);
+    			}
+    			return;
+    		}
+    	}
+    	
+    	for (int i=0; i<records.length(); i++){
+    		JSONObject trans = records.getJSONObject(i);
+    		String u = trans.getString("UUID");
+    		uuid.put(u, height);
+    	}
+    	}
+    	finally{
+    		appLock.writeLock().unlock();
+    	}
+    }
     
     public int getLogLength() {
         return logLength;
     }
     
     public VerifyResult verify(Transaction trans){
-    	VerifyResult v = new VerifyResult(Results.FAILED, "");
-    	return v;
+    	String u = trans.getUUID();
+    	if (!uuid.containsKey(u)) return new VerifyResult(Results.FAILED, null);
+    	int bn = uuid.get(u);
+    	if (bn>=0 && bn<= height - 6) 
+    		return new VerifyResult(Results.SUCCEEDED, Hash.getHashString(blockStrings.get(bn-1)));
+    	return new VerifyResult(Results.PENDING, null);
+    }
+    
+    public String getBlock(String hash){
+    	for (int i = 0; i < height; i++)
+    		if (Hash.getHashString(blockStrings.get(i)).equals(hash)) return blockStrings.get(i);
+    	return null;
     }
     
     public GetHeightResult getHeight(){
-    	GetHeightResult g = new GetHeightResult(0, "");
+    	GetHeightResult g = new GetHeightResult(height, Hash.getHashString(blockStrings.get(height-1)));
     	return g;
     }
 }
