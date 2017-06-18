@@ -78,8 +78,8 @@ public class BlockDatabaseServer {
         String dataDir = config.getString("dataDir");
 
         DatabaseEngine.setup(dataDir);
-        DatabaseEngine dbEngine = DatabaseEngine.getInstance();
-        /*Thread thread = new Thread(){
+       /* DatabaseEngine dbEngine = DatabaseEngine.getInstance();
+        Thread thread = new Thread(){
 			public void run() {
 				try{
 					sleep(10000);
@@ -102,6 +102,8 @@ public class BlockDatabaseServer {
 	        			try{sleep(10000);}catch(Exception e){}
 	        			GetRequest request = GetRequest.newBuilder().setUserID(Integer.toString(j)).build();
 	        			System.out.println(Integer.toString(j) + ":" + Integer.toString(c.get(request).getValue()));
+	        			request = GetRequest.newBuilder().setUserID("Server02").build();
+	        			System.out.println("Server02" + Integer.toString(c.get(request).getValue()));
 	        		}
 
 			}
@@ -228,12 +230,10 @@ public class BlockDatabaseServer {
             	//System.out.println(dbEngine.blockStrings.size());
             	//System.out.println(block.getInt("BlockID"));
             	
-            	height = dbEngine.blockStrings.size();
-            	if (height>0) prev = Hash.getHashString(dbEngine.blockStrings.get(height-1));
-            		else prev = "0000000000000000000000000000000000000000000000000000000000000000";
             	
             	if (find && dbEngine.blockStrings.size() == block.getInt("BlockID") - 1 
-            			&& prev.equals(block.getString("PrevHash"))){
+            			//&& prev.equals(block.getString("PrevHash"))
+            			){
             		JsonBlockString request = JsonBlockString.newBuilder().setJson(block.toString()).build();
             		for (int i = 1; i<= nservers; i++){
                     	JSONObject config = (JSONObject)conf.get(Integer.toString(i));
@@ -242,7 +242,6 @@ public class BlockDatabaseServer {
                         Client c = new Client(address, port);
                         c.pushBlock(request);
                     }
-            		break;
             	}
             }
         }

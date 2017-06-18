@@ -247,26 +247,7 @@ public class DatabaseEngine {
       
     }
 
-    public boolean deposit(String userId, int value) {
-    	if (value < 0) return false;
-       // ReadWriteLock lock = getLock(userId);
-        RWLock.writeLock().lock();
-        try{
-        	int balance = getOrZero(userId);
-            balances.put(userId, balance + value);
-            return true;
-        }
-        finally{
-        	   //*************************************************
-        	//Write the log
-            writeLog("DEPOSIT", userId, "", value);
-         //   System.out.println(balances.get(userId));
-        //*************************************************
-       
-        	RWLock.writeLock().unlock();
-        }
-        
-    }
+    
 
     public boolean withdraw(String userId, int value) {
     	if (value < 0) return false;
@@ -291,6 +272,22 @@ public class DatabaseEngine {
         	RWLock.writeLock().unlock();
         }
     }*/
+    
+    public boolean deposit(String userId, int value) {
+    	if (value < 0) return false;
+       // ReadWriteLock lock = getLock(userId);
+        RWLock.writeLock().lock();
+        try{
+        	int balance = getOrZero(userId);
+            balances.put(userId, balance + value);
+            return true;
+        }
+        finally{
+        	  
+        	RWLock.writeLock().unlock();
+        }
+        
+    }
 
     public boolean transfer(Transaction trans) {
     	if (uuid.containsKey(trans.getUUID())) return false;
@@ -349,6 +346,8 @@ public class DatabaseEngine {
     	String json = request.getJson();
     	JSONObject req = new JSONObject(request.getJson());
     	String prev = req.getString("PrevHash");
+    	String miner = req.getString("MinerID");
+    	if (!miner.matches("Server\\d{2}")) return;
     	
     	if (height > 0 && !Hash.getHashString(blockStrings.get(height - 1)).equals(prev)) {
     		//System.out.println("Prev Hash not correct!");
@@ -361,7 +360,7 @@ public class DatabaseEngine {
     	
     	height++;
     	blockStrings.add(json);
-    	//System.out.println(json);
+    //	System.out.println(json);
     /*	try{
     		File dataFolder = new File(dataDir);
     		if (!dataFolder.exists()) dataFolder.mkdir();
@@ -372,6 +371,7 @@ public class DatabaseEngine {
     		e.printStackTrace();
     	}*/
     	
+    	int totalFee = 0;
     	JSONArray records = req.getJSONArray("Transactions");
     	for (int i = 0; i < records.length(); i++){
     		JSONObject trans = records.getJSONObject(i);
@@ -379,6 +379,7 @@ public class DatabaseEngine {
     		String toId = trans.getString("ToID");
     		int value = trans.getInt("Value");
     		int fee = trans.getInt("MiningFee");
+    		totalFee += fee;
     		if (!approvedTransfer(fromId, toId, value, fee, 1)){
     			for (int j = 0; j <= i; j++){
     				JSONObject transJ = records.getJSONObject(j);
@@ -392,6 +393,11 @@ public class DatabaseEngine {
     		}
     	}
     	
+    	deposit(miner, totalFee);
+    	if (!approved.containsKey(miner)) approved.put(miner, 1000);
+		int minerBalance = approved.get(miner);
+		approved.put(miner, minerBalance + totalFee);
+		
     	for (int i=0; i<records.length(); i++){
     		JSONObject trans = records.getJSONObject(i);
     		String u = trans.getString("UUID");
