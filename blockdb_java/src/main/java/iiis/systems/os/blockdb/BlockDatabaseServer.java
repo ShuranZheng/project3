@@ -22,6 +22,7 @@ import iiis.systems.os.blockchaindb.BlockChainMinerGrpc.BlockChainMinerImplBase;
 import iiis.systems.os.blockchaindb.GetHeightResponse;
 import iiis.systems.os.blockchaindb.VerifyResponse;
 import iiis.systems.os.blockchaindb.VerifyResponse.Results;
+import iiis.systems.os.blockdb.hash.Hash;
 
 import static io.grpc.stub.ServerCalls.asyncUnimplementedUnaryCall;
 
@@ -157,6 +158,48 @@ public class BlockDatabaseServer {
             BooleanResponse response = BooleanResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
+            
+            while (dbEngine.uuid.get(trans.getUUID())<0){
+            	JSONArray list = new JSONArray();
+            	JSONObject t = new JSONObject();
+            	t.put("Type", "TRANSFER");
+            	t.put("FromID", trans.getFromID());
+            	t.put("ToID", trans.getToID());
+            	t.put("Value", trans.getValue());
+            	t.put("MiningFee", trans.getMiningFee());
+            	t.put("UUID", trans.getUUID());
+            	list.put(t);
+            	JSONObject block = new JSONObject();
+            	int height = dbEngine.blockStrings.size();
+            	String prev;
+            	if (height>0) prev = Hash.getHashString(dbEngine.blockStrings.get(height-1));
+            	else prev = "0000000000000000000000000000000000000000000000000000000000000000";
+            	block.put("BlockID", height+1);
+            	block.put("PrevHash", prev);
+            	block.put("Transactions", list);
+            	String id = (me.length()==1)?"0"+me:me;
+            	block.put("MinerID", "Server"+id);
+            	boolean find = false;
+            	for (int i=0; i<100000000; i++){
+            		String nonce = String.format("%08d", i);
+            		block.put("Nonce", nonce);
+            		if (Hash.checkHash(Hash.getHashString(block.toString()))){
+            			find = true;
+            			break;
+            		}
+            	}
+            	if (find && dbEngine.blockStrings.size() == block.getInt("BlockID") - 1 ){
+            		JsonBlockString request = JsonBlockString.newBuilder().setJson(block.toString()).build();
+            		for (int i = 1; i<= nservers; i++){
+                    	JSONObject config = (JSONObject)conf.get(Integer.toString(i));
+                        String address = config.getString("ip");
+                        int port = Integer.parseInt(config.getString("port"));
+                        Client c = new Client(address, port);
+                        c.pushBlock(request);
+                    }
+            		break;
+            	}
+            }
         }
         
         /**

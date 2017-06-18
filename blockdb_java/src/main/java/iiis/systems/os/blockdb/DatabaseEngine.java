@@ -122,9 +122,9 @@ public class DatabaseEngine {
     public static final boolean FAIR = true;
     private HashMap<String, Integer> balances = new HashMap<>();
     private HashMap<String, Integer> approved = new HashMap<>();
-    private ArrayList<String> blockStrings = new ArrayList<>();
+    public ArrayList<String> blockStrings = new ArrayList<>();
     private LinkedList<Transaction> pendingTrans = new LinkedList<>();
-    private HashMap<String, Integer> uuid = new HashMap<>();
+    public HashMap<String, Integer> uuid = new HashMap<>();
  //   private HashMap<String, ReadWriteLock> locks = new HashMap<>();
     private int logLength = 0, blockNum = 0;
     private final int N = 50;
@@ -168,7 +168,7 @@ public class DatabaseEngine {
         }   
     }
     
-    private void writeLog(String type, String fromId, String toId, int value){
+    /*private void writeLog(String type, String fromId, String toId, int value){
     
     	try{
     		File dataFolder = new File(dataDir);
@@ -290,7 +290,7 @@ public class DatabaseEngine {
         //************************************************
         	RWLock.writeLock().unlock();
         }
-    }
+    }*/
 
     public boolean transfer(Transaction trans) {
     	if (uuid.containsKey(trans.getUUID())) return false;
@@ -319,7 +319,7 @@ public class DatabaseEngine {
         	uuid.put(trans.getUUID(), -1);
         	 //***********************************
             //Write the log
-            writeLog("TRANSFER", fromId, toId, value);
+            //writeLog("TRANSFER", fromId, toId, value);
             //*************************************
         	
         	//System.out.println(balances.get(fromId));
@@ -350,17 +350,17 @@ public class DatabaseEngine {
     	JSONObject req = new JSONObject(request.getJson());
     	String prev = req.getString("PrevHash");
     	if (height > 0 && Hash.getHashString(blockStrings.get(height - 1)) != prev) return;
-    	if (!Hash.checkHash(json)) return;
+    	if (!Hash.checkHash(Hash.getHashString(json))) return;
     	
     	height++;
     	blockStrings.add(json);
-    	try{
+    	/*try{
     	BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir  + Integer.toString(height) + ".json"));
     	blockWriter.write(json);
 		blockWriter.close();
     	}catch (IOException e){
     		e.printStackTrace();
-    	}
+    	}*/
     	
     	JSONArray records = req.getJSONArray("Transactions");
     	for (int i = 0; i < records.length(); i++){
