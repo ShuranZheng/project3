@@ -349,12 +349,22 @@ public class DatabaseEngine {
     	String json = request.getJson();
     	JSONObject req = new JSONObject(request.getJson());
     	String prev = req.getString("PrevHash");
-    	if (height > 0 && Hash.getHashString(blockStrings.get(height - 1)) != prev) return;
-    	if (!Hash.checkHash(Hash.getHashString(json))) return;
+    	
+    	if (height > 0 && !Hash.getHashString(blockStrings.get(height - 1)).equals(prev)) {
+    		//System.out.println("Prev Hash not correct!");
+    		return;
+    	}
+    	if (!Hash.checkHash(Hash.getHashString(json))) {
+    		//System.out.println("Invalid block");
+    		return;
+    	}
     	
     	height++;
     	blockStrings.add(json);
-    	/*try{
+    	//System.out.println(json);
+    /*	try{
+    		File dataFolder = new File(dataDir);
+    		if (!dataFolder.exists()) dataFolder.mkdir();
     	BufferedWriter blockWriter = new BufferedWriter(new FileWriter(dataDir  + Integer.toString(height) + ".json"));
     	blockWriter.write(json);
 		blockWriter.close();

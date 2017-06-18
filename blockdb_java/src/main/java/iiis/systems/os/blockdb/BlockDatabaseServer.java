@@ -73,12 +73,41 @@ public class BlockDatabaseServer {
     	JSONObject config = Util.readJsonFile("config.json");
     	conf = config;
         config = (JSONObject)config.get(me);
-        String address = config.getString("ip");
-        int port = Integer.parseInt(config.getString("port"));
+        final String address = config.getString("ip");
+        final int port = Integer.parseInt(config.getString("port"));
         String dataDir = config.getString("dataDir");
 
         DatabaseEngine.setup(dataDir);
         DatabaseEngine dbEngine = DatabaseEngine.getInstance();
+        /*Thread thread = new Thread(){
+			public void run() {
+				try{
+					sleep(10000);
+				}catch (Exception e){
+					e.printStackTrace();
+				}
+				Client c = new Client(address, port);
+	        	//for (int i = 0; i < 10; i++)
+	        		for (int j = 0; j < 10; j++)
+	        		{
+	        			Transaction trans = Transaction.newBuilder().setFromID(Integer.toString(j))
+	        					.setToID(Integer.toString(j+1)).setValue(100).setMiningFee(10)
+	        					.setUUID("Transfer100Fee10"+Integer.toString(j))
+	        					.build();
+	        			System.out.println(c.transfer(trans));
+	        		}
+	        		
+	        		for (int j = 0; j < 10; j++)
+	        		{
+	        			try{sleep(10000);}catch(Exception e){}
+	        			GetRequest request = GetRequest.newBuilder().setUserID(Integer.toString(j)).build();
+	        			System.out.println(Integer.toString(j) + ":" + Integer.toString(c.get(request).getValue()));
+	        		}
+
+			}
+		};
+		thread.start();*/
+
        // if (!dbEngine.recover()) {
        // 	System.out.println("Fail to start the database.");
         //}else{
@@ -86,6 +115,8 @@ public class BlockDatabaseServer {
         	server.start(address, port);
         	server.blockUntilShutdown();
         //}
+        	        	
+        	        	
     }
     
     
@@ -159,26 +190,30 @@ public class BlockDatabaseServer {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
             
+            
+            JSONArray list = new JSONArray();
+        	JSONObject t = new JSONObject();
+        	t.put("Type", "TRANSFER");
+        	t.put("FromID", trans.getFromID());
+        	t.put("ToID", trans.getToID());
+        	t.put("Value", trans.getValue());
+        	t.put("MiningFee", trans.getMiningFee());
+        	t.put("UUID", trans.getUUID());
+        	
+        	list.put(t);
+        	JSONObject block = new JSONObject();
+        	block.put("Transactions", list);
+        	String id = (me.length()==1)?"0"+me:me;
+        	block.put("MinerID", "Server"+id);
+        	
             while (dbEngine.uuid.get(trans.getUUID())<0){
-            	JSONArray list = new JSONArray();
-            	JSONObject t = new JSONObject();
-            	t.put("Type", "TRANSFER");
-            	t.put("FromID", trans.getFromID());
-            	t.put("ToID", trans.getToID());
-            	t.put("Value", trans.getValue());
-            	t.put("MiningFee", trans.getMiningFee());
-            	t.put("UUID", trans.getUUID());
-            	list.put(t);
-            	JSONObject block = new JSONObject();
             	int height = dbEngine.blockStrings.size();
             	String prev;
             	if (height>0) prev = Hash.getHashString(dbEngine.blockStrings.get(height-1));
             	else prev = "0000000000000000000000000000000000000000000000000000000000000000";
+            	
             	block.put("BlockID", height+1);
             	block.put("PrevHash", prev);
-            	block.put("Transactions", list);
-            	String id = (me.length()==1)?"0"+me:me;
-            	block.put("MinerID", "Server"+id);
             	boolean find = false;
             	for (int i=0; i<100000000; i++){
             		String nonce = String.format("%08d", i);
@@ -188,7 +223,17 @@ public class BlockDatabaseServer {
             			break;
             		}
             	}
-            	if (find && dbEngine.blockStrings.size() == block.getInt("BlockID") - 1 ){
+            	
+            	//System.out.println(trans.getUUID()+"  "+find);
+            	//System.out.println(dbEngine.blockStrings.size());
+            	//System.out.println(block.getInt("BlockID"));
+            	
+            	height = dbEngine.blockStrings.size();
+            	if (height>0) prev = Hash.getHashString(dbEngine.blockStrings.get(height-1));
+            		else prev = "0000000000000000000000000000000000000000000000000000000000000000";
+            	
+            	if (find && dbEngine.blockStrings.size() == block.getInt("BlockID") - 1 
+            			&& prev.equals(block.getString("PrevHash"))){
             		JsonBlockString request = JsonBlockString.newBuilder().setJson(block.toString()).build();
             		for (int i = 1; i<= nservers; i++){
                     	JSONObject config = (JSONObject)conf.get(Integer.toString(i));
@@ -251,7 +296,10 @@ public class BlockDatabaseServer {
         @Override
             public void pushBlock(JsonBlockString request,
                 StreamObserver<Null> responseObserver) {
+        		Null response = Null.newBuilder().build();
               dbEngine.pushBlock(request);
+              responseObserver.onNext(response);
+              responseObserver.onCompleted();
             }
 
             /**
@@ -262,7 +310,10 @@ public class BlockDatabaseServer {
         @Override
             public void pushTransaction(Transaction trans,
                 StreamObserver<Null> responseObserver) {
+        	Null response = Null.newBuilder().build();
               dbEngine.transfer(trans);
+              responseObserver.onNext(response);
+              responseObserver.onCompleted();
             }
 
        /* @Override

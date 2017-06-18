@@ -10,6 +10,8 @@ import java.util.logging.Logger;
 
 import iiis.systems.os.blockchaindb.BlockChainMinerGrpc;
 import iiis.systems.os.blockchaindb.BlockChainMinerGrpc.BlockChainMinerBlockingStub;
+import iiis.systems.os.blockchaindb.GetRequest;
+import iiis.systems.os.blockchaindb.GetResponse;
 import iiis.systems.os.blockchaindb.JsonBlockString;
 import iiis.systems.os.blockchaindb.Transaction;
 
@@ -55,4 +57,20 @@ import iiis.systems.os.blockchaindb.Transaction;
 		      return;
 		    }
 		   }
+	  
+	  public boolean transfer(Transaction trans){
+		  try{
+			  return blockingStub.transfer(trans).getSuccess();
+		  }catch (StatusRuntimeException e) {
+		      return false;
+		    }
+	  }
+	  
+	  public GetResponse get(GetRequest q){
+		  try{
+			  return blockingStub.get(q);
+		  }catch (StatusRuntimeException e) {
+		      return null;
+		    }
+	  }
 }
